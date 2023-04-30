@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
-import { jwt } from 'hono/jwt';
+import { cors } from 'hono/cors';
 import { sign } from 'hono/utils/jwt/jwt';
+import { jwt } from 'hono/jwt';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import setError from './helpers/setError';
@@ -11,6 +12,8 @@ export type IEnv = {
 };
 
 const app = new Hono<{ Bindings: IEnv }>();
+
+app.use('*', cors({ origin: '*' }));
 
 app.use('/users/*', async (c, next) => {
   await jwt({
