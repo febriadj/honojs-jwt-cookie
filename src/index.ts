@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { jwt } from 'hono/jwt';
 import { sign } from 'hono/utils/jwt/jwt';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
@@ -10,6 +11,13 @@ export type IEnv = {
 };
 
 const app = new Hono<{ Bindings: IEnv }>();
+
+app.use('/users/*', async (c, next) => {
+  await jwt({
+    secret: c.env.JWT_SECRET,
+    cookie: 'accessToken',
+  })(c, next);
+});
 
 app.get('/', (c) => c.text('Hello Hono!'));
 
@@ -70,6 +78,28 @@ app.post('/login', async (c) => {
     c.cookie('accessToken', token, { httpOnly: true });
 
     return c.json({ success: true });
+  } catch (err) {
+    const error = setError((obj) => {
+      if (err instanceof Error) {
+        obj['message'] = err.message;
+        obj['code'] = 401;
+      }
+    });
+
+    c.status(error.code);
+    return c.json(error);
+  }
+});
+
+app.get('/users/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    const stmt = await c.env.D1.prepare('SELECT * FROM users WHERE id = ?')
+      .bind(id)
+      .first();
+
+    return c.json({ success: true, data: stmt });
   } catch (err) {
     const error = setError((obj) => {
       if (err instanceof Error) {
