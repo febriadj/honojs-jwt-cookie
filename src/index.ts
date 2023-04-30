@@ -18,7 +18,6 @@ app.use('*', cors({ origin: '*' }));
 app.use('/users/*', async (c, next) => {
   await jwt({
     secret: c.env.JWT_SECRET,
-    cookie: 'accessToken',
   })(c, next);
 });
 
@@ -75,12 +74,9 @@ app.post('/login', async (c) => {
     }
 
     // Generate JWT token
-    const token = await sign({ id: stmt.id }, c.env.JWT_SECRET);
+    const accessToken = await sign({ id: stmt.id }, c.env.JWT_SECRET);
 
-    // Store JWT token in cookies
-    c.cookie('accessToken', token, { httpOnly: true });
-
-    return c.json({ success: true });
+    return c.json({ success: true, data: { accessToken } });
   } catch (err) {
     const error = setError((obj) => {
       if (err instanceof Error) {
