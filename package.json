@@ -7,13 +7,15 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "hono": "^3.1.6"
+    "hono": "^3.1.6",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
     "@commitlint/cli": "^17.6.1",
     "@commitlint/config-conventional": "^17.6.1",
     "@types/bcryptjs": "^2.4.2",
+    "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
     "eslint": "^8.39.0",
