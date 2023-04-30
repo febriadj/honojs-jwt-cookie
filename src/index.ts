@@ -8,17 +8,26 @@ import setError from './helpers/setError';
 
 export type IEnv = {
   D1: D1Database;
+  CLIENT_ORIGIN: string;
   JWT_SECRET: string;
 };
 
 const app = new Hono<{ Bindings: IEnv }>();
 
-app.use('*', cors({ origin: '*' }));
+app.use('*', async (c, next) => {
+  const setCors = await cors({
+    origin: ['http://localhost:5173', c.env.CLIENT_ORIGIN],
+    credentials: true,
+  });
+  return setCors(c, next);
+});
 
 app.use('/users/*', async (c, next) => {
-  await jwt({
+  const setJwt = await jwt({
+    cookie: 'accessToken',
     secret: c.env.JWT_SECRET,
-  })(c, next);
+  });
+  return setJwt(c, next);
 });
 
 app.get('/', (c) => c.text('Hello Hono!'));
@@ -73,10 +82,25 @@ app.post('/login', async (c) => {
       throw new Error(!stmt ? 'User does not exist' : 'Invalid password');
     }
 
+    c.header('Access-Control-Allow-Credentials', 'true');
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    c.header('Access-Control-Allow-Headers', '*');
+    c.header(
+      'Access-Control-Allow-Origin',
+      `http://localhost:5173, ${c.env.CLIENT_ORIGIN}`
+    );
+
     // Generate JWT token
     const accessToken = await sign({ id: stmt.id }, c.env.JWT_SECRET);
 
-    return c.json({ success: true, data: { accessToken } });
+    c.cookie('accessToken', accessToken, {
+      expires: new Date(new Date().setDate(new Date().getDate() + 7)),
+      httpOnly: true,
+      sameSite: 'None',
+      secure: true,
+    });
+
+    return c.json({ success: true, data: { userId: stmt.id } });
   } catch (err) {
     const error = setError((obj) => {
       if (err instanceof Error) {
